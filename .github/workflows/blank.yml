@@ -1,0 +1,29 @@
+import notion_client
+from notion_client import Client
+from google.cloud import vision
+
+# Notion認証
+client = Client(auth="your_token")
+database_id = "your_database_id"
+
+# Google Cloud Visionクライアント
+client = vision.ImageAnnotatorClient()
+
+# 画像のURLを取得
+image_url = client.get_block(block_id="your_image_block_id").properties["Image URL"]["url"]
+
+# 画像を解析
+image = vision.Image()
+image.source.image_uri = image_url
+response = client.text_detection(image=image)
+texts = response.text_annotations
+
+# 解析結果をNotionに登録
+page = {
+    "parent": {"database_id": database_id},
+    "properties": {
+        "Name": {"title": [{"text": {"content": texts[0].description}}]},
+        # その他のプロパティを設定
+    }
+}
+client.pages.create(**page)
